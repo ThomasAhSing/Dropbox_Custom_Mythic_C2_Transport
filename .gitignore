@@ -1,0 +1,11 @@
+.venv/
+.tmp/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+lab-data/
+*.sqlite*
+*.secret
+artifacts/

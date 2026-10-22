@@ -1,5 +1,7 @@
 """Provider-independent byte storage contract used by application messaging."""
 
+# works like an interface
+
 from typing import Protocol
 
 
