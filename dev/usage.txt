@@ -1,0 +1,5 @@
+
+Initial Authentication on new machine
+.venv/bin/python -m dev.tools.dropbox_setup auth
+
+

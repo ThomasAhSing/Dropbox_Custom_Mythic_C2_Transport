@@ -5,9 +5,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from dropbox_setup import SetupError, app_key, client
+from dropbox_client import SetupError, app_key, client
 from dropbox_storage import DropboxStorageProvider
-from messages import MessageTransport, MessageValidationError
+from dev.examples.messages import MessageTransport, MessageValidationError
 from storage import StorageError
 
 
@@ -20,7 +20,7 @@ def main(argv=None):
     for command in ("receive", "delete"):
         commands.add_parser(command).add_argument("message_id")
     args = parser.parse_args(argv)
-    load_dotenv(Path(__file__).with_name(".env"))
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
     try:
         with client(app_key()) as dbx:
             transport = MessageTransport(DropboxStorageProvider(dbx))

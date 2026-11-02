@@ -9,12 +9,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from dropbox_setup import SetupError, app_key, client
+from dropbox_client import SetupError, app_key, client
 from dropbox_storage import DropboxStorageProvider
-from lab_node import LabNode
-from local_storage import LocalStorageProvider
+from dev.lab.lab_node import LabNode
+from dev.local_storage import LocalStorageProvider
 from storage import StorageError
-from messages import MessageValidationError
+from dev.examples.messages import MessageValidationError
 
 
 def main(argv=None, *, default_node=None):
@@ -23,7 +23,7 @@ def main(argv=None, *, default_node=None):
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--state", required=True, help="Separate persistent SQLite file for each worker")
     parser.add_argument("--provider", choices=["dropbox", "local"], default="dropbox")
-    parser.add_argument("--root", default="lab-data/store", help="Storage folder for local provider")
+    parser.add_argument("--root", default="dev/lab-data/store", help="Storage folder for local provider")
     parser.add_argument("--heartbeats", type=int, default=3)
     parser.add_argument("--duration", type=float, default=120)
     parser.add_argument("--heartbeat-interval", type=float, default=1)
@@ -32,7 +32,7 @@ def main(argv=None, *, default_node=None):
     if (not 0 <= args.heartbeats <= 1000 or not 0 < args.duration <= 86400
             or not .05 <= args.poll <= 60 or not 0 <= args.heartbeat_interval <= 60):
         parser.error("heartbeats: 0–1000; duration: (0,86400]; poll: 0.05–60 seconds")
-    load_dotenv(Path(__file__).with_name(".env"))
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
     try:
         with ExitStack() as stack:
             if args.provider == "local":

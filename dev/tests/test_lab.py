@@ -12,12 +12,12 @@ import dropbox
 from dropbox.exceptions import AuthError, HttpError, RateLimitError
 
 from dropbox_storage import DropboxStorageProvider
-import dropbox_setup
-from lab_node import LabNode
-from lab_protocol import Envelope
-from lab_report import report
-from local_storage import LocalStorageProvider
-from messages import MessageValidationError
+import dropbox_client as dropbox_setup
+from dev.lab.lab_node import LabNode
+from dev.lab.lab_protocol import Envelope
+from dev.lab.lab_report import report
+from dev.local_storage import LocalStorageProvider
+from dev.examples.messages import MessageValidationError
 from storage import StorageError
 
 

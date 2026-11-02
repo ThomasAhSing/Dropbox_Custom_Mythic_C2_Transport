@@ -17,7 +17,7 @@ flowchart LR
 ```
 
 Both endpoints send and receive; arrows above illustrate one direction. SDK calls
-are confined to the Dropbox adapter and setup/credential code. `LabNode` knows only
+are confined to root `dropbox_storage.py`, root `dropbox_client.py`, and development setup tooling. `LabNode` knows only
 the storage interface. `lab_app.py` composes the selected implementation. The
 older version-1 text format remains supported by `message_cli.py`; lab applications
 use a separate strict version-2 heartbeat/ack schema and filename prefix, so they

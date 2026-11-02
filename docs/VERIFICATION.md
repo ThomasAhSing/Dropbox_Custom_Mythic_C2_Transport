@@ -8,14 +8,14 @@ All traffic in this prototype is a fixed heartbeat or acknowledgement, never a t
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m unittest discover -s dev/tests -v
 ```
 
 Expected: all tests pass. The new `tests/test_lab.py` exercises both directions,
 duplicate detection, restart persistence, an upload that commits before the
 connection fails, invalid JSON, identity mismatch, timeouts, authentication errors,
 and retry exhaustion. Tests use local storage or mocks and require no credentials.
-`requirements.lock.txt` is the earlier Windows snapshot; use requirements.txt on
+`dev/requirements.lock.txt` is the earlier Windows snapshot; use requirements.txt on
 Ubuntu and save `python -m pip freeze` with experiment evidence to record versions.
 
 ## 3. Two independent applications
@@ -23,7 +23,7 @@ Ubuntu and save `python -m pip freeze` with experiment evidence to record versio
 Quick local experiment (starts A and B as separate operating-system processes):
 
 ```powershell
-.\.venv\Scripts\python.exe run_lab.py --scenario baseline
+.\.venv\Scripts\python.exe -m dev.lab.run_lab --scenario baseline
 ```
 
 Expected: exit code 0, five acknowledged heartbeats per application, ten RTT
@@ -36,8 +36,8 @@ For real Dropbox, authorize using the same app key and Dropbox account on both
 endpoints. Separate accounts have separate App Folders and will not see each other.
 
 ```powershell
-.\.venv\Scripts\python.exe dropbox_setup.py auth
-.\.venv\Scripts\python.exe run_lab.py --provider dropbox --duration 120 --scenario baseline
+.\.venv\Scripts\python.exe -m dev.tools.dropbox_setup auth
+.\.venv\Scripts\python.exe -m dev.lab.run_lab --provider dropbox --duration 120 --scenario baseline
 ```
 
 Expected: the same five acknowledged heartbeats in both directions, with measured
@@ -56,9 +56,9 @@ the same time:
 
 ```powershell
 # Terminal A
-.\.venv\Scripts\python.exe app_a.py --run-id RUN_UUID --state lab-data/a.sqlite --duration 120
+.\.venv\Scripts\python.exe -m dev.lab.app_a --run-id RUN_UUID --state dev/lab-data/a.sqlite --duration 120
 # Terminal B
-.\.venv\Scripts\python.exe app_b.py --run-id RUN_UUID --state lab-data/b.sqlite --duration 120
+.\.venv\Scripts\python.exe -m dev.lab.app_b --run-id RUN_UUID --state dev/lab-data/b.sqlite --duration 120
 ```
 
 Expected: `queued`, `sent`, `processed`, and `acknowledged` events; the final
@@ -69,8 +69,8 @@ one SQLite state file between separate processes or VMs.
 ## 4. Reliability, validation, credentials, and observation
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -p test_lab.py -v
-.\.venv\Scripts\python.exe run_lab.py --scenario restart
+.\.venv\Scripts\python.exe -m unittest discover -s dev/tests -p test_lab.py -v
+.\.venv\Scripts\python.exe -m dev.lab.run_lab --scenario restart
 ```
 
 Expected: all reliability tests pass. The restart runner kills B after 1.5 seconds,
@@ -134,7 +134,7 @@ Prerequisites: Canonical Multipass 1.14 or newer with a supported hypervisor, ca
 available in the development environment; these steps require your lab machine.
 
 ```powershell
-powershell -File infra/deploy.ps1
+powershell -File dev/infra/deploy.ps1
 multipass list
 ```
 
@@ -156,7 +156,8 @@ multipass shell dropbox-gw-1
 Inside the VM:
 
 ```bash
-sudo /opt/dropbox-lab/.venv/bin/python /opt/dropbox-lab/configure_gateway.py
+cd /opt/dropbox-lab
+sudo .venv/bin/python -m dev.infra.configure_gateway
 sudo systemctl start dropbox-lab
 sudo systemctl is-active dropbox-lab
 sudo ufw status
@@ -175,7 +176,7 @@ after a VM restart. They have a bounded 24-hour lab runtime.
 Start app A on the host with that same UUID and a new state file:
 
 ```powershell
-.\.venv\Scripts\python.exe app_a.py --run-id RUN_UUID --state lab-data/gateway-a.sqlite --heartbeats 20 --heartbeat-interval 3 --duration 180
+.\.venv\Scripts\python.exe -m dev.lab.app_a --run-id RUN_UUID --state dev/lab-data/gateway-a.sqlite --heartbeats 20 --heartbeat-interval 3 --duration 180
 ```
 
 While A runs, use another host terminal:
@@ -198,8 +199,8 @@ SQLite receipt record. Do not infer safety for external side effects from this.
 After A finishes:
 
 ```powershell
-powershell -File infra/collect.ps1
-.\.venv\Scripts\python.exe lab_report.py lab-data/gateway-a.sqlite artifacts/gateways/dropbox-gw-1.sqlite artifacts/gateways/dropbox-gw-2.sqlite --output artifacts/gateways/report.json
+powershell -File dev/infra/collect.ps1
+.\.venv\Scripts\python.exe -m dev.lab.lab_report dev/lab-data/gateway-a.sqlite dev/artifacts/gateways/dropbox-gw-1.sqlite dev/artifacts/gateways/dropbox-gw-2.sqlite --output dev/artifacts/gateways/report.json
 ```
 
 Expected: twenty acknowledged A heartbeats, no local repeated processing, and
@@ -221,8 +222,8 @@ is installed or executed by this repository.
 ## 7. Measurements and provider comparison
 
 ```powershell
-.\.venv\Scripts\python.exe run_lab.py --scenario replicas
-.\.venv\Scripts\python.exe run_lab.py --provider dropbox --duration 120 --scenario restart
+.\.venv\Scripts\python.exe -m dev.lab.run_lab --scenario replicas
+.\.venv\Scripts\python.exe -m dev.lab.run_lab --provider dropbox --duration 120 --scenario restart
 ```
 
 Use the report path printed by each run. Compare `ack_roundtrip_seconds` p50/p95,

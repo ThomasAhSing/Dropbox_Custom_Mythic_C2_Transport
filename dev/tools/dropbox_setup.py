@@ -1,3 +1,5 @@
+"""Development CLI for Dropbox authorization, diagnostics, and manual uploads."""
+
 import argparse
 import getpass
 import os
@@ -13,20 +15,7 @@ from dotenv import load_dotenv
 from dropbox.exceptions import ApiError, AuthError, DropboxException
 from dropbox.files import WriteMode
 
-SCOPES = ["files.metadata.read", "files.content.read", "files.content.write"]
-SERVICE = "custom-transport-dropbox"
-
-
-class SetupError(Exception):
-    """An actionable configuration or verification failure."""
-
-
-def app_key():
-    """Read the Dropbox app key from the environment and check that it is set."""
-    value = os.environ.get("DROPBOX_APP_KEY", "").strip()
-    if not value:
-        raise SetupError("Set DROPBOX_APP_KEY in .env (see .env.example).")
-    return value
+from dropbox_client import SCOPES, SERVICE, SetupError, app_key, client
 
 
 def authenticate(key):
@@ -50,27 +39,6 @@ def authenticate(key):
     except Exception as exc:
         raise SetupError("Cannot save to the OS credential store. Run auth in a regular local terminal with credential-store access.") from exc
     print("Authenticated. Refresh token saved in the OS credential store.")
-
-
-def client(key):
-    """Create a Dropbox client using a refresh token from the environment or credential store."""
-    token = os.environ.get("DROPBOX_REFRESH_TOKEN")
-    if not token and os.environ.get("CREDENTIALS_DIRECTORY"):
-        try:
-            token = (Path(os.environ["CREDENTIALS_DIRECTORY"]) / "dropbox_token").read_text().strip()
-        except OSError as exc:
-            raise SetupError("Cannot read the service credential; check LoadCredential configuration.") from exc
-    if not token:
-        try:
-            token = keyring.get_password(SERVICE, key)
-        except Exception as exc:
-            raise SetupError("Cannot read the OS credential store. Run in a regular local terminal or supply DROPBOX_REFRESH_TOKEN through your secret manager.") from exc
-    if not token:
-        raise SetupError("No refresh token found. Run: python dropbox_setup.py auth")
-    return dropbox.Dropbox(
-        oauth2_refresh_token=token, app_key=key, timeout=15,
-        max_retries_on_error=0, max_retries_on_rate_limit=0
-    )
 
 
 def entries(dbx, path=""):
@@ -118,9 +86,14 @@ def verify(dbx):
 
 def main(argv=None):
     """Load configuration, run the requested command, and report errors with an exit code."""
-    load_dotenv(Path(__file__).with_name(".env"))
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["auth", "verify", "list"])
+    commands = parser.add_subparsers(dest="command", required=True)
+    for name in ("auth", "verify", "list"):
+        commands.add_parser(name)
+    upload = commands.add_parser("upload", help="Explicitly upload a local file")
+    upload.add_argument("local_path", type=Path)
+    upload.add_argument("dropbox_path")
     args = parser.parse_args(argv)
     try:
         key = app_key()
@@ -130,12 +103,8 @@ def main(argv=None):
             with client(key) as dbx:
                 if args.command == "verify":
                     verify(dbx)
-                    upload_local_file(
-                        dbx,
-                        r"C:\Users\Thomas\Documents\BC Public Service\work\Custom_Transport_Dropbox\test.txt",
-                        "/test2.txt",
-                        
-                    )
+                elif args.command == "upload":
+                    upload_local_file(dbx, args.local_path, args.dropbox_path)
                 else:
                     for item in entries(dbx):
                         print(item.path_display)
@@ -144,6 +113,9 @@ def main(argv=None):
         return 1
     except ApiError as exc:
         print(f"Dropbox API request failed (request ID {exc.request_id}). Check permissions and App Folder access in App Console.", file=sys.stderr)
+        return 1
+    except OSError:
+        print("Cannot read the local upload file.", file=sys.stderr)
         return 1
     except (SetupError, keyring.errors.KeyringError) as exc:
         print(f"Setup error: {exc}", file=sys.stderr)

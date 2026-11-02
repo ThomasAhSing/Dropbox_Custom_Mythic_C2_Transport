@@ -6,8 +6,8 @@ from pathlib import Path
 import sqlite3
 import time
 
-from lab_protocol import Envelope, utc_now
-from messages import MessageValidationError, validate_id
+from dev.lab.lab_protocol import Envelope, utc_now
+from dev.examples.messages import MessageValidationError, validate_id
 from storage import StorageError, StorageProvider
 
 

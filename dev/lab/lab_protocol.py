@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import json
 from uuid import uuid4, uuid5, NAMESPACE_URL
 
-from messages import MessageValidationError, validate_id
+from dev.examples.messages import MessageValidationError, validate_id
 
 
 def utc_now():

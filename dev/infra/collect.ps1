@@ -1,4 +1,4 @@
-param([string]$Output = 'artifacts/gateways')
+param([string]$Output = 'dev/artifacts/gateways')
 $ErrorActionPreference = 'Stop'
 New-Item -ItemType Directory -Path $Output -Force | Out-Null
 foreach ($vm in @('dropbox-gw-1','dropbox-gw-2')) {
@@ -13,4 +13,4 @@ foreach ($vm in @('dropbox-gw-1','dropbox-gw-2')) {
         Set-Content -LiteralPath "$Output/$vm.jsonl" -Encoding utf8
     if ($LASTEXITCODE -ne 0) { throw "Journal collection failed: $vm" }
 }
-Write-Host "Evidence saved in $Output. Run lab_report.py on both SQLite files and the app A state."
+Write-Host "Evidence saved in $Output. Run python -m dev.lab.lab_report on both SQLite files and the app A state."

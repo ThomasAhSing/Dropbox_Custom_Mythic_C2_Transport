@@ -8,7 +8,7 @@ import sys
 from uuid import UUID
 
 import dropbox
-from dropbox_setup import SCOPES
+from dropbox_client import SCOPES
 
 
 def main():

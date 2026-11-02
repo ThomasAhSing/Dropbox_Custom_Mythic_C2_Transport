@@ -2,12 +2,34 @@ import contextlib
 import io
 import unittest
 from types import SimpleNamespace
+from pathlib import Path
 from unittest.mock import Mock, patch
 
-import dropbox_setup as setup
+from dev.tools import dropbox_setup as setup
 
 
 class DropboxSetupTests(unittest.TestCase):
+    @patch.object(setup, "load_dotenv")
+    @patch.object(setup, "app_key", return_value="public-key")
+    @patch.object(setup, "client")
+    @patch.object(setup, "verify")
+    @patch.object(setup, "upload_local_file")
+    def test_verify_cli_only_verifies_and_loads_root_configuration(self, upload, verify, client, key, dotenv):
+        self.assertEqual(setup.main(["verify"]), 0)
+        verify.assert_called_once_with(client.return_value.__enter__.return_value)
+        upload.assert_not_called()
+        dotenv.assert_called_once_with(Path(setup.__file__).resolve().parents[2] / ".env")
+
+    @patch.object(setup, "load_dotenv")
+    @patch.object(setup, "app_key", return_value="public-key")
+    @patch.object(setup, "client")
+    @patch.object(setup, "upload_local_file")
+    def test_upload_cli_uses_explicit_paths(self, upload, client, key, dotenv):
+        self.assertEqual(setup.main(["upload", "example.txt", "/example.txt"]), 0)
+        upload.assert_called_once_with(
+            client.return_value.__enter__.return_value, Path("example.txt"), "/example.txt"
+        )
+
     def make_client(self, contents_match=True):
         dbx = Mock()
         uploaded = SimpleNamespace(id="id:test", rev="revision")
@@ -67,10 +89,10 @@ class DropboxSetupTests(unittest.TestCase):
         with self.assertRaises(setup.SetupError):
             setup.app_key()
 
-    @patch("dropbox_setup.keyring.set_password")
-    @patch("dropbox_setup.getpass.getpass", return_value="code")
-    @patch("dropbox_setup.webbrowser.open")
-    @patch("dropbox_setup.dropbox.DropboxOAuth2FlowNoRedirect")
+    @patch("dev.tools.dropbox_setup.keyring.set_password")
+    @patch("dev.tools.dropbox_setup.getpass.getpass", return_value="code")
+    @patch("dev.tools.dropbox_setup.webbrowser.open")
+    @patch("dev.tools.dropbox_setup.dropbox.DropboxOAuth2FlowNoRedirect")
     def test_auth_uses_pkce_minimal_scopes_and_credential_store(self, factory, browser, prompt, store):
         factory.return_value.start.return_value = "https://www.dropbox.com/oauth2/authorize"
         factory.return_value.finish.return_value = SimpleNamespace(

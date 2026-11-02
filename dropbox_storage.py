@@ -51,7 +51,7 @@ class DropboxStorageProvider:
                 if not transient or not safe_to_retry or attempt == self.attempts:
                     if isinstance(exc, RateLimitError) and exc.backoff:
                         self._blocked_until = time.monotonic() + exc.backoff
-                    message = ("Dropbox authorization failed; run dropbox_setup.py auth again."
+                    message = ("Dropbox authorization failed; run python -m dev.tools.dropbox_setup auth again."
                                if auth else f"Dropbox {action} failed ({code}; attempts={attempt}).")
                     raise StorageError(message, code=code, retryable=transient) from exc
                 self.on_retry(action, attempt)

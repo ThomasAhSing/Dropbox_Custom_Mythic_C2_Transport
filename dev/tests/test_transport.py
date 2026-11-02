@@ -8,7 +8,7 @@ import requests
 from dropbox.files import FileMetadata, FolderMetadata, WriteMode
 
 from dropbox_storage import DropboxStorageProvider
-from messages import MessageTransport, MessageValidationError, TestMessage
+from dev.examples.messages import MessageTransport, MessageValidationError, TestMessage
 from storage import StorageError
 
 

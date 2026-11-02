@@ -9,7 +9,7 @@ import sys
 import time
 from uuid import uuid4
 
-from lab_report import report
+from dev.lab.lab_report import report
 
 
 def main():
@@ -17,7 +17,7 @@ def main():
     parser.add_argument("--provider", choices=["local", "dropbox"], default="local")
     parser.add_argument("--duration", type=float, default=12)
     parser.add_argument("--scenario", choices=["baseline", "restart", "replicas"], default="baseline")
-    parser.add_argument("--output", default="artifacts")
+    parser.add_argument("--output", default="dev/artifacts")
     args = parser.parse_args()
     if args.duration < 8 or args.duration > 3600:
         parser.error("duration must be 8–3600 seconds (use 120 or more with Dropbox)")
@@ -25,7 +25,7 @@ def main():
     root = Path(args.output).resolve() / run_id
     root.mkdir(parents=True)
     processes, handles, timeline, codes = [], [], [], []
-    project = Path(__file__).resolve().parent
+    project = Path(__file__).resolve().parents[2]
     states = []
 
     def launch(node, state, duration, heartbeats=5):
@@ -35,7 +35,7 @@ def main():
         if state_path not in states:
             states.append(state_path)
         process = subprocess.Popen([
-            sys.executable, str(project / "lab_app.py"), "--node", node,
+            sys.executable, "-m", "dev.lab.lab_app", "--node", node,
             "--run-id", run_id, "--state", str(state_path), "--provider", args.provider,
             "--root", str(root / "store"), "--duration", str(duration),
             "--poll", "0.2" if args.provider == "local" else "2", "--heartbeats", str(heartbeats),

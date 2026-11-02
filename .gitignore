@@ -9,3 +9,5 @@ lab-data/
 *.sqlite*
 *.secret
 artifacts/
+dev/artifacts/
+dev/lab-data/

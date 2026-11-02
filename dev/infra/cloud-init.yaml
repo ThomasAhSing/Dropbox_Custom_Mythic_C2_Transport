@@ -26,7 +26,7 @@ write_files:
       WorkingDirectory=/opt/dropbox-lab
       EnvironmentFile=/etc/dropbox-lab/config
       LoadCredential=dropbox_token:/etc/dropbox-lab/token
-      ExecStart=/opt/dropbox-lab/.venv/bin/python lab_app.py --node node-b --run-id ${LAB_RUN_ID} --state /var/lib/dropbox-lab/worker.sqlite --heartbeats 0 --duration 86400 --poll 2
+      ExecStart=/opt/dropbox-lab/.venv/bin/python -m dev.lab.lab_app --node node-b --run-id ${LAB_RUN_ID} --state /var/lib/dropbox-lab/worker.sqlite --heartbeats 0 --duration 86400 --poll 2
       Restart=on-failure
       RestartSec=10
       StateDirectory=dropbox-lab
